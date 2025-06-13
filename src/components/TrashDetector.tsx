@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera } from 'lucide-react';
@@ -86,7 +85,7 @@ const TrashDetector: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Camera className="h-6 w-6" />
-          Smart Trash Detection System
+          Trash Detector Table
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
