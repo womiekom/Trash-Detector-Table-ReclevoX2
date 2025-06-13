@@ -19,7 +19,7 @@ export const useCamera = () => {
         videoRef.current.srcObject = mediaStream;
         setStream(mediaStream);
       }
-      return 'Camera started - Position camera to the right side of table';
+      return 'Camera started - Point camera at objects to detect trash vs normal items';
     } catch (error) {
       console.error('Error accessing camera:', error);
       return 'Camera access denied';

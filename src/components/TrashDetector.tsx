@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera } from 'lucide-react';
@@ -67,7 +68,7 @@ const TrashDetector: React.FC = () => {
     }
     
     setIsDetecting(!isDetecting);
-    setDetectionStatus(isDetecting ? 'Detection paused' : 'Detection active - monitoring under table area');
+    setDetectionStatus(isDetecting ? 'Detection paused' : 'Detection active - monitoring for trash vs normal items');
   };
 
   const toggleAudio = () => {
