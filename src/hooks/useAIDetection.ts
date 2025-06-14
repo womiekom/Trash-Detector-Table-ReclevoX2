@@ -51,7 +51,7 @@ export const useAIDetection = () => {
     console.log(`📸 Captured frame: ${canvas.width}x${canvas.height}`);
 
     try {
-      // Simple color and edge detection for basic object recognition
+      // Improved image analysis
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const analysis = analyzeImage(imageData);
       
@@ -62,39 +62,46 @@ export const useAIDetection = () => {
       let trashItemsDetected: string[] = [];
       let allDetections: string[] = [];
       
-      // Basic detection based on color analysis and patterns
-      if (analysis.hasPlastic) {
-        trashDetected = true;
-        trashItemsDetected.push('plastic item');
-        allDetections.push('plastic item detected');
-        console.log('🗑️ PLASTIC DETECTED via color analysis');
-      }
-      
-      if (analysis.hasPaper) {
-        trashDetected = true;
-        trashItemsDetected.push('paper');
-        allDetections.push('paper detected');
-        console.log('🗑️ PAPER DETECTED via texture analysis');
-      }
-      
-      if (analysis.hasBottle) {
-        trashDetected = true;
-        trashItemsDetected.push('bottle');
-        allDetections.push('bottle shape detected');
-        console.log('🗑️ BOTTLE DETECTED via shape analysis');
-      }
-      
-      // Add some normal items detection for balance
+      // First, check for normal items (this takes priority)
       if (analysis.hasSkinTone) {
         normalItemsDetected.push('person/hand');
         allDetections.push('person/hand detected');
         console.log('👤 PERSON/HAND detected via skin tone');
       }
       
-      if (analysis.hasFabric) {
-        normalItemsDetected.push('clothing');
+      if (analysis.hasFabric || analysis.hasClothing) {
+        normalItemsDetected.push('clothing/hat');
         allDetections.push('clothing detected');
-        console.log('👕 CLOTHING detected via texture');
+        console.log('👕 CLOTHING/HAT detected via texture analysis');
+      }
+      
+      // Only check for trash if we don't have strong normal item indicators
+      const hasStrongNormalIndicators = analysis.hasSkinTone || analysis.hasFabric || analysis.hasClothing;
+      
+      if (!hasStrongNormalIndicators) {
+        // More restrictive trash detection
+        if (analysis.hasActualTrash) {
+          trashDetected = true;
+          trashItemsDetected.push('trash item');
+          allDetections.push('actual trash detected');
+          console.log('🗑️ ACTUAL TRASH DETECTED');
+        }
+        
+        if (analysis.hasPlasticBottle) {
+          trashDetected = true;
+          trashItemsDetected.push('plastic bottle');
+          allDetections.push('plastic bottle detected');
+          console.log('🗑️ PLASTIC BOTTLE DETECTED');
+        }
+        
+        if (analysis.hasCrumpledPaper) {
+          trashDetected = true;
+          trashItemsDetected.push('crumpled paper');
+          allDetections.push('crumpled paper detected');
+          console.log('🗑️ CRUMPLED PAPER DETECTED');
+        }
+      } else {
+        console.log('✅ Normal items detected, skipping trash detection to avoid false positives');
       }
       
       // Prevent spam by checking if detection changed
@@ -125,60 +132,87 @@ export const useAIDetection = () => {
   };
 };
 
-// Simple image analysis function
+// More accurate image analysis function
 const analyzeImage = (imageData: ImageData) => {
   const data = imageData.data;
   const width = imageData.width;
   const height = imageData.height;
   
-  let plasticPixels = 0;
-  let paperPixels = 0;
-  let bottlePixels = 0;
+  let brightPlasticPixels = 0;
+  let crumpledTexture = 0;
   let skinPixels = 0;
   let fabricPixels = 0;
+  let clothingPixels = 0;
+  let actualTrashPixels = 0;
+  let plasticBottlePixels = 0;
   
-  // Sample every 10th pixel for performance
-  for (let i = 0; i < data.length; i += 40) {
+  // More sophisticated analysis - sample every 20th pixel for better performance
+  for (let i = 0; i < data.length; i += 80) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
     
-    // Detect plastic-like colors (bright, saturated colors)
-    if ((r > 200 && g < 100 && b < 100) || // Red plastic
-        (r < 100 && g < 100 && b > 200) || // Blue plastic
-        (r > 200 && g > 200 && b < 100)) { // Yellow plastic
-      plasticPixels++;
-    }
-    
-    // Detect paper-like colors (white, light colors)
-    if (r > 220 && g > 220 && b > 220) {
-      paperPixels++;
-    }
-    
-    // Detect bottle-like transparency/reflection (very bright or very dark)
-    if ((r > 240 && g > 240 && b > 240) || (r < 30 && g < 30 && b < 30)) {
-      bottlePixels++;
-    }
-    
-    // Detect skin tones
-    if (r > 150 && r < 220 && g > 100 && g < 180 && b > 80 && b < 150) {
+    // Detect skin tones (human presence - strong normal indicator)
+    if (r > 120 && r < 255 && g > 80 && g < 220 && b > 60 && b < 180 &&
+        r > g && g > b && (r - b) > 15) {
       skinPixels++;
     }
     
-    // Detect fabric (mid-range colors)
-    if (r > 50 && r < 200 && g > 50 && g < 200 && b > 50 && b < 200 &&
-        Math.abs(r - g) < 50 && Math.abs(g - b) < 50) {
+    // Detect fabric/clothing textures (strong normal indicator)
+    if (r > 30 && r < 180 && g > 30 && g < 180 && b > 30 && b < 180 &&
+        Math.abs(r - g) < 40 && Math.abs(g - b) < 40 && Math.abs(r - b) < 40) {
       fabricPixels++;
+    }
+    
+    // Detect clothing patterns (hats, shirts, etc.)
+    if ((r > 80 && r < 200 && g > 80 && g < 200 && b > 80 && b < 200) ||
+        (r > 200 && g > 200 && b > 200)) { // White clothing like caps
+      clothingPixels++;
+    }
+    
+    // Only detect trash with very specific characteristics
+    // Bright colored plastic (very saturated colors)
+    if ((r > 180 && g < 80 && b < 80) || // Bright red plastic
+        (r < 80 && g < 80 && b > 180) || // Bright blue plastic
+        (r > 180 && g > 180 && b < 80)) { // Bright yellow plastic
+      brightPlasticPixels++;
+    }
+    
+    // Detect crumpled paper texture (more varied colors, rougher texture)
+    if (r > 180 && g > 180 && b > 180 && 
+        Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20) {
+      // Check surrounding pixels for texture variation
+      if (i > 160 && i < data.length - 160) {
+        const prevR = data[i - 80];
+        const nextR = data[i + 80];
+        if (Math.abs(r - prevR) > 10 || Math.abs(r - nextR) > 10) {
+          crumpledTexture++;
+        }
+      }
+    }
+    
+    // Detect transparent/reflective plastic bottles
+    if ((r > 230 && g > 230 && b > 230) || // Very bright reflections
+        (r < 40 && g < 40 && b < 40)) { // Dark transparent areas
+      plasticBottlePixels++;
+    }
+    
+    // Detect actual trash colors (browns, grays, dirty colors)
+    if ((r > 60 && r < 120 && g > 40 && g < 100 && b > 20 && b < 80) || // Brown trash
+        (r > 40 && r < 100 && g > 40 && g < 100 && b > 40 && b < 100)) { // Gray trash
+      actualTrashPixels++;
     }
   }
   
-  const totalSamples = data.length / 40;
+  const totalSamples = data.length / 80;
   
   return {
-    hasPlastic: plasticPixels / totalSamples > 0.02, // 2% threshold
-    hasPaper: paperPixels / totalSamples > 0.05, // 5% threshold
-    hasBottle: bottlePixels / totalSamples > 0.03, // 3% threshold
-    hasSkinTone: skinPixels / totalSamples > 0.01, // 1% threshold
-    hasFabric: fabricPixels / totalSamples > 0.03 // 3% threshold
+    hasSkinTone: skinPixels / totalSamples > 0.02, // 2% threshold for skin
+    hasFabric: fabricPixels / totalSamples > 0.15, // 15% threshold for fabric
+    hasClothing: clothingPixels / totalSamples > 0.20, // 20% threshold for clothing
+    hasActualTrash: actualTrashPixels / totalSamples > 0.08, // 8% threshold for actual trash
+    hasPlasticBottle: plasticBottlePixels / totalSamples > 0.25, // 25% threshold for bottles
+    hasCrumpledPaper: crumpledTexture / totalSamples > 0.05, // 5% threshold for crumpled paper
+    hasBrightPlastic: brightPlasticPixels / totalSamples > 0.03 // 3% threshold for bright plastic
   };
 };
