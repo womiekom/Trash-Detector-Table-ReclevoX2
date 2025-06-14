@@ -27,8 +27,7 @@ const TrashDetector: React.FC = () => {
       const result = await detectObjects(videoRef);
       
       if (!result) {
-        setDetectionStatus('❌ Detection failed - camera not ready');
-        return;
+        return; // Skip if no change in detection
       }
 
       const { trashDetected, trashItemsDetected, normalItemsDetected, allDetections } = result;
@@ -47,8 +46,8 @@ const TrashDetector: React.FC = () => {
         setDetectionStatus(`🔍 Objects detected: ${allDetections.slice(0, 3).join(', ')}${allDetections.length > 3 ? '...' : ''}`);
         console.log('🔍 Objects detected but not classified');
       } else {
-        setDetectionStatus('🔍 Scanning... No objects detected in current frame');
-        console.log('👀 No objects detected, continuing to scan...');
+        setDetectionStatus('🔍 Scanning... Point camera at objects');
+        console.log('👀 Actively scanning for objects...');
       }
     } catch (error) {
       console.error('Detection error:', error);
@@ -60,11 +59,11 @@ const TrashDetector: React.FC = () => {
     let intervalId: NodeJS.Timeout;
 
     if (isDetecting && stream) {
-      // Detect more frequently for better responsiveness
-      intervalId = setInterval(detectTrash, 2000); // Check every 2 seconds
+      // Much faster detection with lightweight system
+      intervalId = setInterval(detectTrash, 1000); // Check every 1 second
       
-      // Also run initial detection
-      setTimeout(detectTrash, 1000);
+      // Run initial detection
+      setTimeout(detectTrash, 500);
     }
 
     return () => {
@@ -102,7 +101,7 @@ const TrashDetector: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Camera className="h-6 w-6" />
-          Trash Detector Table
+          Trash Detector (Lightweight)
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -125,7 +124,7 @@ const TrashDetector: React.FC = () => {
 
         {allDetections.length > 0 && (
           <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm font-medium text-blue-800">Debug - All AI Detections:</p>
+            <p className="text-sm font-medium text-blue-800">Debug - Detection Results:</p>
             <div className="text-xs text-blue-600 mt-1 max-h-20 overflow-y-auto">
               {allDetections.map((detection, index) => (
                 <div key={index}>{detection}</div>
