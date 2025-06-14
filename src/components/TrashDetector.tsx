@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera } from 'lucide-react';
@@ -28,26 +26,33 @@ const TrashDetector: React.FC = () => {
     try {
       const result = await detectObjects(videoRef);
       
-      if (!result) return;
+      if (!result) {
+        setDetectionStatus('❌ Detection failed - camera not ready');
+        return;
+      }
 
       const { trashDetected, trashItemsDetected, normalItemsDetected, allDetections } = result;
       
       // Update all detections for debugging
       setAllDetections(allDetections || []);
       
-      if (trashDetected) {
-        setDetectionStatus(`🗑️ Trash detected: ${trashItemsDetected.join(', ')}`);
+      if (trashDetected && trashItemsDetected.length > 0) {
+        setDetectionStatus(`🗑️ TRASH DETECTED: ${trashItemsDetected.join(', ')}`);
         playTrashAlert();
+        console.log('🚨 PLAYING TRASH ALERT SOUND!');
       } else if (normalItemsDetected.length > 0) {
-        setDetectionStatus(`✅ Normal items detected: ${normalItemsDetected.join(', ')}`);
+        setDetectionStatus(`✅ Safe items detected: ${normalItemsDetected.join(', ')}`);
+        console.log('✅ Normal items found, no alert needed');
       } else if (allDetections && allDetections.length > 0) {
-        setDetectionStatus(`🔍 Objects detected: ${allDetections.join(', ')}`);
+        setDetectionStatus(`🔍 Objects detected: ${allDetections.slice(0, 3).join(', ')}${allDetections.length > 3 ? '...' : ''}`);
+        console.log('🔍 Objects detected but not classified');
       } else {
-        setDetectionStatus('❌ No objects detected - try adjusting camera angle or lighting');
+        setDetectionStatus('🔍 Scanning... No objects detected in current frame');
+        console.log('👀 No objects detected, continuing to scan...');
       }
     } catch (error) {
       console.error('Detection error:', error);
-      setDetectionStatus('Detection error occurred');
+      setDetectionStatus('❌ Detection error - check console for details');
     }
   };
 
@@ -55,7 +60,11 @@ const TrashDetector: React.FC = () => {
     let intervalId: NodeJS.Timeout;
 
     if (isDetecting && stream) {
-      intervalId = setInterval(detectTrash, 3000); // Check every 3 seconds
+      // Detect more frequently for better responsiveness
+      intervalId = setInterval(detectTrash, 2000); // Check every 2 seconds
+      
+      // Also run initial detection
+      setTimeout(detectTrash, 1000);
     }
 
     return () => {
@@ -75,7 +84,7 @@ const TrashDetector: React.FC = () => {
     }
     
     setIsDetecting(!isDetecting);
-    setDetectionStatus(isDetecting ? 'Detection paused' : 'Detection active - monitoring for trash vs normal items');
+    setDetectionStatus(isDetecting ? 'Detection paused' : 'Detection starting... Point camera at objects');
   };
 
   const toggleAudio = () => {
@@ -117,7 +126,11 @@ const TrashDetector: React.FC = () => {
         {allDetections.length > 0 && (
           <div className="p-3 bg-blue-50 rounded-lg">
             <p className="text-sm font-medium text-blue-800">Debug - All AI Detections:</p>
-            <p className="text-xs text-blue-600 mt-1">{allDetections.join(', ')}</p>
+            <div className="text-xs text-blue-600 mt-1 max-h-20 overflow-y-auto">
+              {allDetections.map((detection, index) => (
+                <div key={index}>{detection}</div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>

@@ -14,19 +14,31 @@ export const useAIDetection = () => {
       // Import the transformers library dynamically
       const { pipeline } = await import('@huggingface/transformers');
       
-      // Try a different model that might be better for general object detection
+      // Try DETR model which is better for general object detection
       detectorRef.current = await pipeline(
         'object-detection',
-        'Xenova/yolos-tiny',
+        'Xenova/detr-resnet-50',
         { device: 'webgpu' }
       );
       
       setIsModelLoading(false);
-      return 'AI model loaded - Ready to detect trash vs normal items';
+      return 'AI model loaded - Ready to detect objects';
     } catch (error) {
       console.error('Error loading model:', error);
-      setIsModelLoading(false);
-      return 'Failed to load AI model - using basic detection';
+      
+      // Fallback to a different model
+      try {
+        detectorRef.current = await pipeline(
+          'object-detection',
+          'Xenova/yolos-tiny'
+        );
+        setIsModelLoading(false);
+        return 'Fallback AI model loaded - Ready to detect objects';
+      } catch (fallbackError) {
+        console.error('Fallback model also failed:', fallbackError);
+        setIsModelLoading(false);
+        return 'Failed to load AI model - using basic detection';
+      }
     }
   };
 
@@ -48,9 +60,9 @@ export const useAIDetection = () => {
 
     try {
       if (detectorRef.current) {
-        // Use AI model for detection with higher threshold to reduce false positives
+        // Use lower threshold to catch more objects
         const results = await detectorRef.current(canvas, {
-          threshold: 0.3 // Increased threshold to reduce sensitivity
+          threshold: 0.15 // Lower threshold to detect more objects
         });
         
         console.log('Raw detection results:', results);
@@ -68,26 +80,28 @@ export const useAIDetection = () => {
           console.log(`Detected: "${label}" with confidence: ${(score * 100).toFixed(1)}%`);
           allDetections.push(`${label} (${(score * 100).toFixed(1)}%)`);
           
-          // Higher threshold for classification (30% confidence)
-          if (score > 0.3) {
+          // Lower threshold for any detection (15% confidence)
+          if (score > 0.15) {
             if (isNormalItem(label)) {
               normalItemsDetected.push(label);
-              console.log(`✅ Normal item: ${label}`);
+              console.log(`✅ Normal item detected: ${label}`);
             } else if (isTrashItem(label)) {
               trashDetected = true;
               trashItemsDetected.push(label);
               console.log(`🗑️ TRASH DETECTED: ${label}`);
             } else {
-              // Log unclassified items but don't treat them as trash
-              console.log(`❓ Unclassified item: ${label} - treating as normal`);
-              normalItemsDetected.push(label);
+              // For debugging, let's see what unclassified items are detected
+              console.log(`❓ Unclassified item: ${label} - need to categorize`);
+              allDetections.push(`UNCLASSIFIED: ${label}`);
             }
           }
         }
         
         // If we have any detections at all, show them
         if (allDetections.length > 0) {
-          console.log('All detections:', allDetections.join(', '));
+          console.log('All detections this round:', allDetections.join(', '));
+        } else {
+          console.log('No objects detected in this frame');
         }
         
         return {
@@ -97,14 +111,14 @@ export const useAIDetection = () => {
           allDetections
         };
       } else {
-        // Less frequent fallback detection for testing
-        const detectionResult = Math.random() > 0.8; // 20% chance for testing
+        // Fallback detection for testing when model fails
+        console.log('No AI model available, using fallback detection');
         
         return {
-          trashDetected: detectionResult,
-          trashItemsDetected: detectionResult ? ['test trash item'] : [],
-          normalItemsDetected: detectionResult ? [] : ['test normal item'],
-          allDetections: []
+          trashDetected: false,
+          trashItemsDetected: [],
+          normalItemsDetected: ['fallback detection'],
+          allDetections: ['No AI model loaded']
         };
       }
     } catch (error) {
