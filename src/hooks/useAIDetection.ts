@@ -15,12 +15,13 @@ export const useAIDetection = () => {
       const { pipeline } = await import('@huggingface/transformers');
       
       // Try DETR model which is better for general object detection
-      detectorRef.current = await pipeline(
+      const detector = await pipeline(
         'object-detection',
         'Xenova/detr-resnet-50',
         { device: 'webgpu' }
       );
       
+      detectorRef.current = detector;
       setIsModelLoading(false);
       return 'AI model loaded - Ready to detect objects';
     } catch (error) {
@@ -28,10 +29,12 @@ export const useAIDetection = () => {
       
       // Fallback to a different model
       try {
-        detectorRef.current = await pipeline(
+        const { pipeline } = await import('@huggingface/transformers');
+        const detector = await pipeline(
           'object-detection',
           'Xenova/yolos-tiny'
         );
+        detectorRef.current = detector;
         setIsModelLoading(false);
         return 'Fallback AI model loaded - Ready to detect objects';
       } catch (fallbackError) {
