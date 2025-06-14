@@ -48,9 +48,9 @@ export const useAIDetection = () => {
 
     try {
       if (detectorRef.current) {
-        // Use AI model for detection with very low thresholds
+        // Use AI model for detection with higher threshold to reduce false positives
         const results = await detectorRef.current(canvas, {
-          threshold: 0.1 // Much lower threshold
+          threshold: 0.3 // Increased threshold to reduce sensitivity
         });
         
         console.log('Raw detection results:', results);
@@ -68,19 +68,19 @@ export const useAIDetection = () => {
           console.log(`Detected: "${label}" with confidence: ${(score * 100).toFixed(1)}%`);
           allDetections.push(`${label} (${(score * 100).toFixed(1)}%)`);
           
-          // Very low threshold for any detection (10% confidence)
-          if (score > 0.1) {
-            if (isTrashItem(label)) {
+          // Higher threshold for classification (30% confidence)
+          if (score > 0.3) {
+            if (isNormalItem(label)) {
+              normalItemsDetected.push(label);
+              console.log(`✅ Normal item: ${label}`);
+            } else if (isTrashItem(label)) {
               trashDetected = true;
               trashItemsDetected.push(label);
               console.log(`🗑️ TRASH DETECTED: ${label}`);
-            } else if (isNormalItem(label)) {
-              normalItemsDetected.push(label);
-              console.log(`✅ Normal item: ${label}`);
             } else {
-              // Log unclassified items to help debug
-              console.log(`❓ Unclassified item: ${label}`);
-              normalItemsDetected.push(label); // Treat unknown items as normal for now
+              // Log unclassified items but don't treat them as trash
+              console.log(`❓ Unclassified item: ${label} - treating as normal`);
+              normalItemsDetected.push(label);
             }
           }
         }
@@ -94,11 +94,11 @@ export const useAIDetection = () => {
           trashDetected,
           trashItemsDetected,
           normalItemsDetected,
-          allDetections // Include all detections for debugging
+          allDetections
         };
       } else {
-        // Enhanced fallback detection for testing
-        const detectionResult = Math.random() > 0.5; // 50% chance for testing
+        // Less frequent fallback detection for testing
+        const detectionResult = Math.random() > 0.8; // 20% chance for testing
         
         return {
           trashDetected: detectionResult,

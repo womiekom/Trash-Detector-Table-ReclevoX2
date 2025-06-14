@@ -6,48 +6,55 @@ export const trashItems = [
   'cup', 'can', 'container',
   'wrapper', 'bag', 'plastic bag',
   'food container', 'package',
-  'cigarette', 'cigar'
+  'cigarette', 'cigar', 'trash', 'garbage',
+  'waste', 'litter'
 ];
 
 export const normalItems = [
   'person', 'hand', 'finger',
+  'hat', 'cap', 'beanie', 'helmet',
   'shoe', 'sneaker', 'boot',
-  'bag', 'backpack', 'purse',
+  'bag', 'backpack', 'purse', 'handbag',
   'book', 'notebook', 'books',
   'phone', 'cell phone', 'mobile phone',
   'keys', 'wallet',
-  'clothing', 'shirt', 'jacket'
+  'clothing', 'shirt', 'jacket', 'clothes',
+  'tie', 'suit', 'dress', 'pants', 'jeans',
+  'glasses', 'sunglasses',
+  'watch', 'clock',
+  'laptop', 'computer', 'keyboard', 'mouse'
 ];
 
 export const isTrashItem = (label: string): boolean => {
   const lowerLabel = label.toLowerCase();
   
-  // More specific matching for trash items
-  if (lowerLabel.includes('bottle') || 
-      lowerLabel.includes('paper') || 
-      lowerLabel.includes('tissue') ||
-      lowerLabel.includes('cup') ||
-      lowerLabel.includes('can') ||
-      lowerLabel.includes('wrapper') ||
-      lowerLabel.includes('container')) {
-    return true;
+  // First check if it's explicitly a normal item - if so, it's NOT trash
+  if (isNormalItem(label)) {
+    return false;
   }
   
+  // Then check for trash items
   return trashItems.some(trash => lowerLabel.includes(trash));
 };
 
 export const isNormalItem = (label: string): boolean => {
   const lowerLabel = label.toLowerCase();
   
-  // Don't classify bottles/containers as normal items
-  if (lowerLabel.includes('bottle') || lowerLabel.includes('container')) {
-    return false;
+  // Check for clothing items including hats
+  if (lowerLabel.includes('hat') || 
+      lowerLabel.includes('cap') || 
+      lowerLabel.includes('clothing') || 
+      lowerLabel.includes('shirt') || 
+      lowerLabel.includes('jacket') ||
+      lowerLabel.includes('clothes')) {
+    return true;
   }
   
-  // Specifically check for books
+  // Check for books
   if (lowerLabel.includes('book')) {
     return true;
   }
   
+  // Check all normal items
   return normalItems.some(normal => lowerLabel.includes(normal));
 };
