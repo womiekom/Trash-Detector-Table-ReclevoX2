@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera } from 'lucide-react';
@@ -13,6 +14,7 @@ const TrashDetector: React.FC = () => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<string>('Not detecting');
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [allDetections, setAllDetections] = useState<string[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const { videoRef, stream, startCamera, stopCamera } = useCamera();
@@ -28,15 +30,20 @@ const TrashDetector: React.FC = () => {
       
       if (!result) return;
 
-      const { trashDetected, trashItemsDetected, normalItemsDetected } = result;
+      const { trashDetected, trashItemsDetected, normalItemsDetected, allDetections } = result;
+      
+      // Update all detections for debugging
+      setAllDetections(allDetections || []);
       
       if (trashDetected) {
         setDetectionStatus(`🗑️ Trash detected: ${trashItemsDetected.join(', ')}`);
         playTrashAlert();
       } else if (normalItemsDetected.length > 0) {
         setDetectionStatus(`✅ Normal items detected: ${normalItemsDetected.join(', ')}`);
+      } else if (allDetections && allDetections.length > 0) {
+        setDetectionStatus(`🔍 Objects detected: ${allDetections.join(', ')}`);
       } else {
-        setDetectionStatus('✅ Area clear - no objects detected');
+        setDetectionStatus('❌ No objects detected - try adjusting camera angle or lighting');
       }
     } catch (error) {
       console.error('Detection error:', error);
@@ -106,6 +113,13 @@ const TrashDetector: React.FC = () => {
           detectionStatus={detectionStatus}
           audioEnabled={audioEnabled}
         />
+
+        {allDetections.length > 0 && (
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm font-medium text-blue-800">Debug - All AI Detections:</p>
+            <p className="text-xs text-blue-600 mt-1">{allDetections.join(', ')}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
