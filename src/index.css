@@ -97,13 +97,13 @@
   }
 }
 
-/* Custom Reclevo animations and effects */
+/* Enhanced Reclevo animations and effects with brighter neon */
 @keyframes neon-glow {
   0%, 100% {
-    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
+    text-shadow: 0 0 8px #00ffff, 0 0 16px #00ffff, 0 0 24px #00ffff, 0 0 32px #00ffff;
   }
   50% {
-    text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
+    text-shadow: 0 0 16px #00ffff, 0 0 32px #00ffff, 0 0 48px #00ffff, 0 0 64px #00ffff;
   }
 }
 
@@ -112,10 +112,23 @@
   50% { transform: translateY(-10px); }
 }
 
+@keyframes bright-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.8), inset 0 0 40px rgba(0, 255, 255, 0.2);
+  }
+}
+
 .neon-text {
   animation: neon-glow 2s ease-in-out infinite alternate;
 }
 
 .float-animation {
   animation: float 3s ease-in-out infinite;
+}
+
+.bright-neon-border {
+  animation: bright-pulse 2s ease-in-out infinite;
 }
