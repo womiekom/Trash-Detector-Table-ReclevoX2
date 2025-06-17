@@ -122,13 +122,13 @@
 }
 
 .neon-text {
-  animation: neon-glow 2s ease-in-out infinite alternate;
+  animation: neon-glow 1s ease-in-out infinite alternate;
 }
 
 .float-animation {
-  animation: float 3s ease-in-out infinite;
+  animation: float 2s ease-in-out infinite;
 }
 
 .bright-neon-border {
-  animation: bright-pulse 2s ease-in-out infinite;
+  animation: bright-pulse 1s ease-in-out infinite;
 }
