@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera, Zap } from 'lucide-react';
@@ -16,11 +15,18 @@ const TrashDetector: React.FC = () => {
   const [allDetections, setAllDetections] = useState<string[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  const { videoRef, stream, startCamera, stopCamera } = useCamera();
+  const { videoRef, stream, flashEnabled, flashSupported, startCamera, stopCamera, toggleFlash } = useCamera();
   const { isModelLoading, canvasRef, loadModel, detectObjects } = useAIDetection();
 
   const playTrashAlert = () => {
     createAudioAlert(audioEnabled, audioContextRef);
+  };
+
+  const handleToggleFlash = async () => {
+    const result = await toggleFlash();
+    if (result) {
+      setDetectionStatus(result);
+    }
   };
 
   const detectTrash = async () => {
@@ -118,9 +124,12 @@ const TrashDetector: React.FC = () => {
           isModelLoading={isModelLoading}
           audioEnabled={audioEnabled}
           stream={stream}
+          flashEnabled={flashEnabled}
+          flashSupported={flashSupported}
           onToggleDetection={toggleDetection}
           onToggleAudio={toggleAudio}
           onStopCamera={handleStopCamera}
+          onToggleFlash={handleToggleFlash}
         />
 
         <DetectionStatus

@@ -3,13 +3,37 @@ export const createAudioAlert = (audioEnabled: boolean, audioContextRef: React.M
   if (!audioEnabled) return;
 
   try {
+    // Use text-to-speech for the alert
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance('Please throw the trash');
+      utterance.rate = 1.2;
+      utterance.pitch = 1.1;
+      utterance.volume = 0.8;
+      
+      // Try to use a more natural voice
+      const voices = speechSynthesis.getVoices();
+      const preferredVoice = voices.find(voice => 
+        voice.lang.includes('en') && 
+        (voice.name.includes('Google') || voice.name.includes('Microsoft'))
+      );
+      
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      
+      speechSynthesis.speak(utterance);
+      console.log('🔊 TRASH DETECTED - "Please throw the trash" spoken!');
+      return;
+    }
+    
+    // Fallback to beep if speech synthesis is not available
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
 
     const audioContext = audioContextRef.current;
     
-    // Create a simple beep sound
+    // Create a simple beep sound as fallback
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -27,7 +51,7 @@ export const createAudioAlert = (audioEnabled: boolean, audioContextRef: React.M
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.6);
 
-    console.log('🔊 TRASH DETECTED - Audio alert played!');
+    console.log('🔊 TRASH DETECTED - Fallback beep played (speech not available)!');
   } catch (error) {
     console.error('Error playing audio alert:', error);
     console.log('🗑️ PLEASE THROW THE TRASH!');
