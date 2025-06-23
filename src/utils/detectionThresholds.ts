@@ -14,6 +14,10 @@ export interface DetectionThresholds {
   paperTexture: number;
   emptySurface: number;
   objectContent: number;
+  frontViewBottle: number;
+  redLabel: number;
+  bottleCap: number;
+  reflectiveSurface: number;
 }
 
 export const DETECTION_THRESHOLDS: DetectionThresholds = {
@@ -28,7 +32,11 @@ export const DETECTION_THRESHOLDS: DetectionThresholds = {
   crumpledPaper: 0.08,
   paperTexture: 0.04,
   emptySurface: 0.30,
-  objectContent: 0.15
+  objectContent: 0.15,
+  frontViewBottle: 0.08,
+  redLabel: 0.03,
+  bottleCap: 0.02,
+  reflectiveSurface: 0.05
 };
 
 export const evaluateDetectionResults = (
@@ -39,6 +47,10 @@ export const evaluateDetectionResults = (
     hasPlasticBottle: analysis.plasticBottlePixels / totalSamples > DETECTION_THRESHOLDS.plasticBottle,
     hasTransparentBottle: analysis.transparentBottlePixels / totalSamples > DETECTION_THRESHOLDS.transparentBottle,
     hasBottleShape: analysis.bottleShapePixels / totalSamples > DETECTION_THRESHOLDS.bottleShape,
+    hasFrontViewBottle: analysis.frontViewBottlePixels / totalSamples > DETECTION_THRESHOLDS.frontViewBottle,
+    hasRedLabel: analysis.redLabelPixels / totalSamples > DETECTION_THRESHOLDS.redLabel,
+    hasBottleCap: analysis.bottleCapPixels / totalSamples > DETECTION_THRESHOLDS.bottleCap,
+    hasReflectiveSurface: analysis.reflectiveSurfacePixels / totalSamples > DETECTION_THRESHOLDS.reflectiveSurface,
     hasSkinTone: analysis.skinPixels / totalSamples > DETECTION_THRESHOLDS.skinTone,
     hasFabric: analysis.fabricPixels / totalSamples > DETECTION_THRESHOLDS.fabric,
     hasClothing: analysis.clothingPixels / totalSamples > DETECTION_THRESHOLDS.clothing,
