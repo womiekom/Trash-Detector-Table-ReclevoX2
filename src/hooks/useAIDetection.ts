@@ -11,23 +11,23 @@ export const useAIDetection = () => {
   const loadModel = async () => {
     try {
       setIsModelLoading(true);
-      console.log('🚀 Loading enhanced detection system...');
+      console.log('🚀 Loading enhanced multi-angle detection system...');
       
       // Simulate a quick setup
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setIsModelLoading(false);
-      console.log('✅ Enhanced bottle detection system ready!');
-      return 'Enhanced detection system loaded - Improved bottle detection sensitivity';
+      console.log('✅ Enhanced multi-angle bottle detection system ready!');
+      return 'Enhanced multi-angle detection system loaded - Front & side view detection with improved lighting adaptation';
     } catch (error) {
       console.error('❌ Error setting up detection:', error);
       setIsModelLoading(false);
-      return 'Detection system ready (enhanced mode)';
+      return 'Multi-angle detection system ready (enhanced mode)';
     }
   };
 
   const detectObjects = async (videoRef: React.RefObject<HTMLVideoElement>) => {
-    console.log('🔍 Running enhanced bottle detection...');
+    console.log('🔍 Running enhanced multi-angle bottle detection...');
     
     if (!videoRef.current || !canvasRef.current) {
       console.log('❌ Video or canvas not ready');
@@ -52,12 +52,12 @@ export const useAIDetection = () => {
     console.log(`📸 Captured frame: ${canvas.width}x${canvas.height}`);
 
     try {
-      // Enhanced image analysis with better bottle detection
+      // Enhanced image analysis with multi-angle bottle detection
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const rawAnalysis = analyzeImageEnhanced(imageData);
       const analysis = evaluateDetectionResults(rawAnalysis, rawAnalysis.totalSamples);
       
-      console.log('🎯 Enhanced analysis results:', analysis);
+      console.log('🎯 Enhanced multi-angle analysis results:', analysis);
       
       let trashDetected = false;
       let normalItemsDetected: string[] = [];
@@ -83,19 +83,40 @@ export const useAIDetection = () => {
         console.log('📋 EMPTY SURFACE detected - safe');
       }
       
-      // Only check for trash if no normal items were detected AND there's actual object content
+      // Enhanced bottle detection with multiple criteria (front and side view)
       if (normalItemsDetected.length === 0 && analysis.hasObjectContent) {
-        // Enhanced bottle detection - check with stricter criteria
-        if (analysis.hasPlasticBottle && analysis.hasBottleShape) {
+        // Front view bottle detection with red label (like Coca-Cola)
+        if (analysis.hasFrontViewBottle && analysis.hasRedLabel && analysis.hasReflectiveSurface) {
           trashDetected = true;
-          trashItemsDetected.push('plastic bottle');
-          allDetections.push('plastic bottle detected');
-          console.log('🗑️ PLASTIC BOTTLE DETECTED (high confidence)');
-        } else if (analysis.hasTransparentBottle && analysis.hasBottleShape) {
+          trashItemsDetected.push('front-view bottle with label');
+          allDetections.push('front-view bottle with red label detected');
+          console.log('🗑️ FRONT-VIEW BOTTLE WITH RED LABEL DETECTED (high confidence)');
+        }
+        
+        // Enhanced side view detection
+        if (analysis.hasPlasticBottle && analysis.hasBottleShape && analysis.hasBottleCap) {
+          trashDetected = true;
+          trashItemsDetected.push('plastic bottle with cap');
+          allDetections.push('plastic bottle with cap detected');
+          console.log('🗑️ PLASTIC BOTTLE WITH CAP DETECTED (high confidence)');
+        }
+        
+        // Transparent bottle detection (any angle)
+        if (analysis.hasTransparentBottle && (analysis.hasBottleShape || analysis.hasFrontViewBottle) && analysis.hasReflectiveSurface) {
           trashDetected = true;
           trashItemsDetected.push('transparent bottle');
           allDetections.push('transparent bottle detected');
           console.log('🗑️ TRANSPARENT BOTTLE DETECTED (high confidence)');
+        }
+        
+        // Enhanced general bottle detection (combines front and side criteria)
+        if ((analysis.hasPlasticBottle || analysis.hasFrontViewBottle) && 
+            (analysis.hasBottleShape || analysis.hasRedLabel) &&
+            analysis.hasReflectiveSurface) {
+          trashDetected = true;
+          trashItemsDetected.push('multi-angle bottle');
+          allDetections.push('multi-angle bottle detected');
+          console.log('🗑️ MULTI-ANGLE BOTTLE DETECTED (high confidence)');
         }
         
         // Check for other trash items with higher confidence
