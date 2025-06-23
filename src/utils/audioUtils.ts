@@ -28,7 +28,8 @@ export const createAudioAlert = (audioEnabled: boolean, audioContextRef: React.M
     
     // Fallback to beep if speech synthesis is not available
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      audioContextRef.current = new AudioContextClass();
     }
 
     const audioContext = audioContextRef.current;
