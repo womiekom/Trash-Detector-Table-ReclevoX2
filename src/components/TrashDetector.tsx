@@ -1,9 +1,11 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera, Zap } from 'lucide-react';
 import { useCamera } from '../hooks/useCamera';
 import { useAIDetection } from '../hooks/useAIDetection';
 import { createAudioAlert } from '../utils/audioUtils';
+import { VolumeMonitor } from '../utils/volumeMonitor';
 import CameraView from './CameraView';
 import DetectionControls from './DetectionControls';
 import DetectionStatus from './DetectionStatus';
@@ -11,15 +13,23 @@ import DetectionStatus from './DetectionStatus';
 const TrashDetector: React.FC = () => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<string>('Not detecting');
-  const [audioEnabled, setAudioEnabled] = useState(true);
   const [allDetections, setAllDetections] = useState<string[]>([]);
+  const [showVolumeAlert, setShowVolumeAlert] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const volumeMonitorRef = useRef<VolumeMonitor | null>(null);
 
   const { videoRef, stream, flashEnabled, flashSupported, startCamera, stopCamera, toggleFlash } = useCamera();
   const { isModelLoading, canvasRef, loadModel, detectObjects } = useAIDetection();
 
   const playTrashAlert = () => {
-    createAudioAlert(audioEnabled, audioContextRef);
+    createAudioAlert(true, audioContextRef); // Always enabled now
+  };
+
+  const handleVolumeChange = (isMuted: boolean) => {
+    setShowVolumeAlert(isMuted);
+    if (isMuted) {
+      console.log('🔇 Volume appears to be muted - showing alert');
+    }
   };
 
   const handleToggleFlash = async () => {
@@ -78,6 +88,20 @@ const TrashDetector: React.FC = () => {
     };
   }, [isDetecting, stream]);
 
+  useEffect(() => {
+    // Start volume monitoring when component mounts
+    if (!volumeMonitorRef.current) {
+      volumeMonitorRef.current = new VolumeMonitor(handleVolumeChange);
+      volumeMonitorRef.current.startMonitoring();
+    }
+
+    return () => {
+      if (volumeMonitorRef.current) {
+        volumeMonitorRef.current.stopMonitoring();
+      }
+    };
+  }, []);
+
   const toggleDetection = async () => {
     if (!stream) {
       const cameraStatus = await startCamera();
@@ -91,10 +115,6 @@ const TrashDetector: React.FC = () => {
     
     setIsDetecting(!isDetecting);
     setDetectionStatus(isDetecting ? 'Detection paused' : 'Detection starting... Point camera at objects');
-  };
-
-  const toggleAudio = () => {
-    setAudioEnabled(!audioEnabled);
   };
 
   const handleStopCamera = () => {
@@ -117,24 +137,31 @@ const TrashDetector: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 bg-gradient-to-b from-gray-900/50 to-black/90 p-6">
+        {showVolumeAlert && (
+          <div className="fixed inset-0 bg-red-500/20 backdrop-blur-sm z-50 flex items-center justify-center animate-pulse">
+            <div className="bg-red-600 text-white p-8 rounded-lg text-center shadow-2xl border-4 border-red-400">
+              <h2 className="text-2xl font-bold mb-4">🔊 TURN ON THE VOLUME!</h2>
+              <p className="text-lg">Audio is required for trash detection alerts</p>
+            </div>
+          </div>
+        )}
+        
         <CameraView videoRef={videoRef} canvasRef={canvasRef} />
         
         <DetectionControls
           isDetecting={isDetecting}
           isModelLoading={isModelLoading}
-          audioEnabled={audioEnabled}
           stream={stream}
           flashEnabled={flashEnabled}
           flashSupported={flashSupported}
           onToggleDetection={toggleDetection}
-          onToggleAudio={toggleAudio}
           onStopCamera={handleStopCamera}
           onToggleFlash={handleToggleFlash}
         />
 
         <DetectionStatus
           detectionStatus={detectionStatus}
-          audioEnabled={audioEnabled}
+          audioEnabled={true}
         />
 
         {allDetections.length > 0 && (
